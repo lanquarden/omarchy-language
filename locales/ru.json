@@ -9,6 +9,12 @@
     "one": "%1 промпт",
     "other": "%1 промптов"
   },
+  "%1 reminder": {
+    "few": "%1 напоминания",
+    "many": "%1 напоминаний",
+    "one": "%1 напоминание",
+    "other": "%1 напоминаний"
+  },
   "%1 session": {
     "few": "%1 сессии",
     "many": "%1 сессий",
@@ -62,6 +68,7 @@
   "Display": "Экран",
   "Draining watts": "Сливаем заряд",
   "Easy listening": "Тихо",
+  "Enter the number of minutes": "Введите количество минут",
   "Even day": "Умеренно",
   "FEELS": "ОЩУЩАЕТСЯ",
   "FIXED BRIGHTNESS": "ФИКС. ЯРКОСТЬ",
@@ -81,6 +88,7 @@
   "In %1 · out %2 · cache read %3 · cache write %4": "Вход %1 · выход %2 · чтение кэша %3 · запись кэша %4",
   "Inhaling kilowatts": "Втягиваем киловатты",
   "Injecting electrons": "Впрыск электронов",
+  "Invalid reminder": "Недопустимое напоминание",
   "LIFE": "Срок службы",
   "LIMITS": "ЛИМИТЫ",
   "LIVE TO": "Дожить до",
