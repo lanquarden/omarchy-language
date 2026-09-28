@@ -7,6 +7,10 @@
     "one": "%1 მოთხოვნა",
     "other": "%1 მოთხოვნა"
   },
+  "%1 reminder": {
+    "one": "%1 შეხსენება",
+    "other": "%1 შეხსენება"
+  },
   "%1 session": {
     "one": "%1 სესია",
     "other": "%1 სესია"
@@ -58,6 +62,7 @@
   "Display": "ეკრანი",
   "Draining watts": "ვატების ხარჯვა",
   "Easy listening": "მშვიდი მოსმენა",
+  "Enter the number of minutes": "შეიყვანეთ წუთების რაოდენობა",
   "Even day": "მშვიდი დღე",
   "FEELS": "ᲨᲔᲒᲠᲫᲜᲔᲑᲘᲗ",
   "FIXED BRIGHTNESS": "ᲤᲘᲥᲡᲘᲠᲔᲑᲣᲚᲘ ᲡᲘᲙᲐᲨᲙᲐᲨᲔ",
@@ -77,6 +82,7 @@
   "In %1 · out %2 · cache read %3 · cache write %4": "შემავალი %1 · გამავალი %2 · ქეშის კითხვა %3 · ქეშის ჩაწერა %4",
   "Inhaling kilowatts": "კილოვატების ჩასუნთქვა",
   "Injecting electrons": "ელექტრონების შეყვანა",
+  "Invalid reminder": "არასწორი შეხსენება",
   "LIFE": "ხანგრძლივობა",
   "LIMITS": "ლიმიტები",
   "LIVE TO": "გაძლებს",
@@ -128,6 +134,8 @@
   "Previous month": "წინა თვე",
   "Pumping power": "ენერგიის ტუმბვა",
   "Refresh translation": "თარგმანის განახლება",
+  "Remind in minutes": "შეხსენება წუთებში",
+  "Reminder message": "შეხსენების ტექსტი",
   "Resets in %1": "განულდება %1-ში",
   "SCALE": "ᲛᲐᲡᲨᲢᲐᲑᲘ",
   "SOURCES": "ᲬᲧᲐᲠᲝᲔᲑᲘ",
@@ -139,6 +147,7 @@
   "Search regions...": "რეგიონების ძებნა...",
   "Session": "სესია",
   "Session is still %1. Log out and back in to switch.": "სესია ჯერ კიდევ %1-ზეა. გადასართავად გამოდით სისტემიდან და ხელახლა შედით.",
+  "Set Reminder": "შეხსენების დაყენება",
   "Show": "ჩვენება",
   "Silence Notifications": "შეტყობინებების გაჩუმება",
   "Silenced": "გაჩუმებულია",
