@@ -222,8 +222,9 @@ removed. `setup --with-panels` installs all of them.
 | [monitor](https://github.com/sbelcl/omarchy-monitor-l10n) | brightness, text size, scale |
 | [agents](https://github.com/sbelcl/omarchy-agents-l10n) | AI usage; also localises durations, dates, plurals and money |
 | [tray](https://github.com/sbelcl/omarchy-tray-l10n) | the manage popup and pin/hide actions |
-| [indicators](https://github.com/sbelcl/omarchy-indicators-l10n) | notification, night light, recording, stay-awake, dictation tooltips |
+| [indicators](https://github.com/sbelcl/omarchy-indicators-l10n) | notification, night light, recording, stay-awake, dictation, reminder tooltips |
 | [system update](https://github.com/sbelcl/omarchy-system-update-l10n) | the pending-updates tooltip |
+| [reminders](https://github.com/sbelcl/omarchy-reminders-l10n) | the reminder flow's two prompts and its invalid-input notification |
 
 The **network** panel is deliberately left alone: 71 strings across nearly 2,000
 lines, in the file upstream changes most. The keyboard layout indicator has

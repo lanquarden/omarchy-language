@@ -34,6 +34,7 @@ PANEL_REPOS=(
   "https://github.com/sbelcl/omarchy-tray-l10n.git sbelcl.tray"
   "https://github.com/sbelcl/omarchy-indicators-l10n.git sbelcl.indicators"
   "https://github.com/sbelcl/omarchy-system-update-l10n.git sbelcl.system-update"
+  "https://github.com/sbelcl/omarchy-reminders-l10n.git sbelcl.reminders"
 )
 PLUGIN_DIR="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 
