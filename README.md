@@ -247,8 +247,17 @@ layer upstream, delete them rather than maintain them.
 ```bash
 omarchy plugin validate .   # manifest against the schema the shell enforces
 ./test/model-test.sh        # Model.js, locales.awk, menu-translate; needs node
+./test/setup-test.sh        # setup, against a throwaway HOME and stubbed omarchy
 ./menu-translate status     # what the panel's menu section is reading
 ```
+
+`setup` is the script a developer never runs on their own machine, because their
+machine is already the desired state — which is how it shipped able to end
+halfway through and say nothing. `test/setup-test.sh` runs it end to end with
+`omarchy` and `localectl` stubbed and `HOME` pointed at a temporary directory,
+and asserts the thing a partial run loses: `~/.config/omarchy/locales/<lang>.json`,
+which every translated panel reads and without which the desktop is silently
+English again.
 
 The menu test is the one that matters: it runs the generator against the real
 Omarchy menu, merges the result through the shell's own `MenuModel.js`, and

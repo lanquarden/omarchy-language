@@ -24,6 +24,9 @@ jobs:
       - name: Unit tests
         run: test/model-test.sh
 
+      - name: Install script
+        run: test/setup-test.sh
+
       - name: Translation data
         run: tools/check-translations.sh
 

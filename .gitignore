@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+
+# Per-user Claude Code permissions, not shared state.
+.claude/settings.local.json
