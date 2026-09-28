@@ -32,6 +32,15 @@ make_stubs() {
   cat > "$bin/omarchy" <<'STUB'
 #!/bin/bash
 set -uo pipefail
+plugins="$HOME/.config/omarchy/plugins"
+enabled_file="$HOME/.stub-enabled"
+rescanned="$HOME/.stub-rescanned"
+touch "$enabled_file"
+
+# ENABLE_NEEDS_RESCAN reproduces the real failure: the shell has not noticed the
+# plugin yet, so enabling it fails until something asks for a rescan.
+can_enable() { [[ -z ${ENABLE_NEEDS_RESCAN:-} || -f $rescanned ]]; }
+
 case "${1:-} ${2:-}" in
   "plugin add")
     repo=$3
@@ -39,24 +48,44 @@ case "${1:-} ${2:-}" in
     name=$(basename "$repo" .git)
     if [[ $name == omarchy-language ]]; then
       id=$(jq -r .id "$STUB_REPO/manifest.json")
-      mkdir -p "$HOME/.config/omarchy/plugins/$id"
+      mkdir -p "$plugins/$id"
       # tar rather than cp -r: the working tree carries .git, and copying that
       # into every fixture would be most of the run's time for nothing.
-      tar -c --exclude=.git --exclude=.github -C "$STUB_REPO" . |
-        tar -x -C "$HOME/.config/omarchy/plugins/$id"
+      tar -c --exclude=.git --exclude=.github -C "$STUB_REPO" . | tar -x -C "$plugins/$id"
     else
       # The forks are not under test here; an empty folder is enough to stand
       # for "installed", which is all setup looks at. omarchy-system-update-l10n
       # installs as sbelcl.system-update, so the id is the middle of the name.
       id="sbelcl.${name#omarchy-}"; id="${id%-l10n}"
-      mkdir -p "$HOME/.config/omarchy/plugins/$id"
+      mkdir -p "$plugins/$id"
     fi
+    # add installs and then enables; the second half can fail on its own.
+    can_enable || { echo "stub: plugin '$id' is not known; run: omarchy-shell shell rescanPlugins" >&2; exit 1; }
+    echo "$id" >> "$enabled_file"
+    ;;
+  "plugin enable")
+    id=$3
+    can_enable || { echo "stub: plugin '$id' is not known" >&2; exit 1; }
+    echo "$id" >> "$enabled_file"
+    ;;
+  "plugin list")
+    for dir in "$plugins"/*/; do
+      [[ -d $dir ]] || continue
+      id=$(basename "$dir")
+      if grep -qxF "$id" "$enabled_file"; then echo "{\"id\":\"$id\",\"enabled\":true}"
+      else echo "{\"id\":\"$id\",\"enabled\":false}"; fi
+    done | jq -s .
     ;;
   "plugin update") ;;
   "plugin validate") ;;
-  "plugin list") ;;
   *) echo "stub: unhandled '$*'" >&2; exit 64 ;;
 esac
+STUB
+  cat > "$bin/omarchy-shell" <<'STUB'
+#!/bin/bash
+# `omarchy-shell shell rescanPlugins` is what a failed enable asks for.
+[[ "${1:-} ${2:-}" == "shell rescanPlugins" ]] && touch "$HOME/.stub-rescanned"
+exit 0
 STUB
   cat > "$bin/localectl" <<'STUB'
 #!/bin/bash
@@ -68,7 +97,7 @@ case "${1:-}" in
 esac
 exit 0
 STUB
-  chmod +x "$bin/omarchy" "$bin/localectl"
+  chmod +x "$bin/omarchy" "$bin/omarchy-shell" "$bin/localectl"
 }
 
 # One setup run in its own HOME. Echoes the exit status, leaves the tree behind
@@ -85,7 +114,9 @@ run_setup() {
 }
 
 tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+# KEEP=1 leaves the fixtures behind, including each run's out.txt -- the only
+# way to see why a failing assertion failed.
+trap '[[ -n ${KEEP:-} ]] && echo "fixtures: $tmp" || rm -rf "$tmp"' EXIT
 
 # --- the happy path, which is also the one that was never tested -------------
 
@@ -120,6 +151,20 @@ grep -q "omarchy-tray-l10n" "$tmp/panelfail/out.txt" &&
   ok "names the panel it could not install" || bad "names the panel it could not install"
 grep -q "Done, except for" "$tmp/panelfail/out.txt" &&
   ok "reports the run as partial" || bad "reports the run as partial"
+
+# --- the failure that shipped: installed, but never enabled ------------------
+
+echo "an enable that needs a rescan is retried rather than reported"
+export ENABLE_NEEDS_RESCAN=1
+status=$(run_setup "$tmp/rescan" sl_SI.UTF-8 --with-panels --no-menu)
+unset ENABLE_NEEDS_RESCAN
+check "exits 0" "$status" "0"
+still_disabled=$(grep -c . "$tmp/rescan/.stub-enabled" 2>/dev/null || echo 0)
+check "every panel ended up enabled" "$still_disabled" "12"
+grep -q "asking the shell to rescan" "$tmp/rescan/out.txt" &&
+  ok "says it rescanned" || bad "says it rescanned"
+[[ -f "$tmp/rescan/.config/omarchy/locales/sl.json" ]] &&
+  ok "catalog installed" || bad "catalog installed"
 
 # --- a cancelled password prompt is not the end of the run ------------------
 

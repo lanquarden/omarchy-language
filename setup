@@ -81,7 +81,11 @@ if [[ -d $PLUGIN_DIR ]]; then
   note "already installed; updating"
   omarchy plugin update "$PLUGIN_ID" --yes >/dev/null 2>&1 || note "no update available"
 elif ! omarchy plugin add "$PLUGIN_REPO" --enable --yes; then
-  fail "could not install the plugin from $PLUGIN_REPO -- is the network up?"
+  # add installs and then enables, and the enable half fails on its own when
+  # the shell has not rescanned yet. Only a missing folder is fatal here.
+  [[ -d $PLUGIN_DIR ]] ||
+    fail "could not install the plugin from $PLUGIN_REPO -- is the network up?"
+  note "installed, but not enabled yet"
 fi
 [[ -d $PLUGIN_DIR ]] || fail "expected the plugin at $PLUGIN_DIR; it is not there"
 
@@ -98,17 +102,37 @@ if (( WITH_PANELS )); then
       # `add` copies the plugin in and then enables it, and the enable half
       # fails on its own when the running shell has not rescanned yet
       # ("plugin is not known; run: omarchy-shell shell rescanPlugins"). The
-      # files are in place, so say which half failed rather than calling the
-      # whole thing lost -- and above all do not take the catalog down with it.
-      if [[ -d "$HOME/.config/omarchy/plugins/$id" ]]; then
-        carry "enable $id (it is installed; 'omarchy-restart-shell' should pick it up)"
-      else
-        carry "install $id from $repo"
-      fi
+      # files being in place is the common case, so that is not a lost install.
+      [[ -d "$HOME/.config/omarchy/plugins/$id" ]] || carry "install $id from $repo"
     fi
   done
+
 else
   say "2/5  Skipping the translated panels (pass --with-panels to translate the bar)"
+fi
+
+# An installed plugin that is not enabled is the quietest way for this to go
+# wrong: the built-in keeps the slot, so the bar looks right and reads English,
+# and a second run takes the "already installed" branch and never revisits it.
+# Ask the shell to rescan -- which is exactly what a failed enable asks for --
+# and try again.
+to_enable=()
+for entry in "$PLUGIN_REPO $PLUGIN_ID" "${PANEL_REPOS[@]}"; do
+  read -r repo id <<<"$entry"
+  [[ $id == "$PLUGIN_ID" || $WITH_PANELS == 1 ]] || continue
+  [[ -d "$HOME/.config/omarchy/plugins/$id" ]] || continue
+  omarchy plugin list --json 2>/dev/null |
+    jq -e --arg id "$id" 'any(.[]; .id == $id and .enabled)' >/dev/null 2>&1 ||
+    to_enable+=("$id")
+done
+
+if (( ${#to_enable[@]} )); then
+  note "${#to_enable[@]} installed but not enabled; asking the shell to rescan"
+  omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+  for id in "${to_enable[@]}"; do
+    omarchy plugin enable "$id" >/dev/null 2>&1 ||
+      carry "enable $id (it is installed; 'omarchy-restart-shell' should pick it up)"
+  done
 fi
 
 say "3/5  Setting the system language to $LOCALE"
