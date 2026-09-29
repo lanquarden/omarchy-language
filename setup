@@ -35,6 +35,7 @@ PANEL_REPOS=(
   "https://github.com/sbelcl/omarchy-indicators-l10n.git sbelcl.indicators"
   "https://github.com/sbelcl/omarchy-system-update-l10n.git sbelcl.system-update"
   "https://github.com/sbelcl/omarchy-reminders-l10n.git sbelcl.reminders"
+  "https://github.com/sbelcl/omarchy-network-l10n.git sbelcl.network"
 )
 PLUGIN_DIR="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 
@@ -160,6 +161,16 @@ if (( WITH_MENU )); then
       note "$("$PLUGIN_DIR/menu-translate" status)"
     else
       carry "translate the menu into $table"
+    fi
+    # Super+K reads the same table. Rebinding it edits the user's own
+    # bindings.lua, inside a marked block that `menu-keybindings unbind` takes
+    # back out.
+    if [[ ! -x "$PLUGIN_DIR/menu-keybindings" ]]; then
+      note "this plugin version cannot translate Super+K"
+    elif [[ ! -f $HOME/.config/hypr/bindings.lua ]]; then
+      note "no ~/.config/hypr/bindings.lua; Super+K stays English"
+    elif ! "$PLUGIN_DIR/menu-keybindings" bind; then
+      carry "put Super+K on the translated keybindings menu"
     fi
   else
     note "no menu translation for $table yet; the menu stays English"
