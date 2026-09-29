@@ -1,0 +1,163 @@
+#!/bin/bash
+#
+# Omarchy's keybindings menu (Super+K), in the system language.
+#
+# The menu is omarchy-menu-keybindings: it reads `hyprctl binds`, orders the
+# rows, caches them, and dispatches whatever is picked. None of that needs to
+# change -- only the words on screen. So this runs it unmodified with a shim
+# for omarchy-menu-select ahead of it on PATH. The shim swaps each row's
+# description for its translation on the way into the menu, and the pick back
+# to the English row on the way out, so the ordering, the cache and the
+# dispatch all keep working on the English they were written against.
+#
+# The words come from the same translations/<locale>.tsv as the Omarchy menu:
+# keyed by the English string, so "Screenshot" reads the same in both. A
+# description ending in a number -- "Switch to workspace 3" -- is looked up
+# without it, so one row covers all ten workspaces. With no table for LANG
+# this is Omarchy's menu, unchanged.
+#
+# Usage: menu-keybindings [args]   the menu (args go to omarchy-menu-keybindings)
+#        menu-keybindings bind     put Super+K on this in ~/.config/hypr/bindings.lua
+#        menu-keybindings unbind   give Super+K back to Omarchy
+#        menu-keybindings status
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+TABLE_DIR="$SCRIPT_DIR/translations"
+BINDINGS="${HYPR_BINDINGS:-$HOME/.config/hypr/bindings.lua}"
+BEGIN="-- >>> omarchy-language keybindings"
+END="-- <<< omarchy-language keybindings"
+
+fail() { echo "menu-keybindings: $*" >&2; exit 1; }
+
+# sl_SI.UTF-8 -> sl_SI, the way menu-translate names its tables.
+table_for() {
+  local locale="${1%%.*}"
+  locale="${locale%%@*}"
+  echo "$TABLE_DIR/$locale.tsv"
+}
+
+# "SUPER + K                           → Keybindings" in, the same row with the
+# description translated out. Rows are also written to $2 as
+# "translated<TAB>english" so the pick can be mapped back.
+translate_rows() {
+  local table="$1" map="$2"
+  awk -F'\t' -v map="$map" '
+    FNR == NR {
+      if ($0 !~ /^[[:space:]]*(#|$)/ && NF == 2) t[$1] = $2
+      next
+    }
+    {
+      line = $0
+      at = index(line, " → ")
+      if (at > 0) {
+        head = substr(line, 1, at + length(" → ") - 1)
+        desc = substr(line, at + length(" → "))
+        if (desc in t) {
+          line = head t[desc]
+        } else if (match(desc, / [0-9]+$/) && substr(desc, 1, RSTART - 1) in t) {
+          line = head t[substr(desc, 1, RSTART - 1)] substr(desc, RSTART)
+        }
+      }
+      print line
+      print line "\t" $0 > map
+    }
+  ' "$table" -
+}
+
+# Invoked through shim/omarchy-menu-select: $1 is the prompt, rows on stdin.
+cmd_select() {
+  local real="${LANGUAGE_MENU_SELECT:?}" table="${LANGUAGE_TABLE:?}"
+  local prompt="$1" picked
+  shift
+
+  prompt=$(awk -F'\t' -v p="$prompt" '$1 == p { print $2; found = 1; exit } END { if (!found) print p }' "$table")
+  # Global, not local: the EXIT trap runs after this function has returned.
+  MAP=$(mktemp "${XDG_RUNTIME_DIR:-/tmp}/menu-keybindings.XXXXXX")
+  trap 'rm -f "$MAP"' EXIT
+
+  picked=$(translate_rows "$table" "$MAP" | "$real" "$prompt" "$@") || return
+  [[ -n $picked ]] || return 0
+  awk -F'\t' -v p="$picked" '$1 == p { print $2; exit }' "$MAP"
+}
+
+cmd_menu() {
+  local table real
+  table=$(table_for "${LANG:-}")
+  real=$(command -v omarchy-menu-select || true)
+
+  # No table, or no menu to put in front of: Omarchy's own, as it is.
+  if [[ ! -f $table || -z $real || $real == "$SCRIPT_DIR/shim/"* ]]; then
+    exec omarchy-menu-keybindings "$@"
+  fi
+
+  LANGUAGE_MENU_SELECT="$real" LANGUAGE_TABLE="$table" PATH="$SCRIPT_DIR/shim:$PATH" \
+    exec omarchy-menu-keybindings "$@"
+}
+
+# The block binds only while this file exists, so removing the plugin leaves
+# Super+K on Omarchy's menu rather than on nothing. The description stays
+# "Keybindings": the menu orders its rows by matching the English, and that
+# one belongs at the top.
+block() {
+  cat <<LUA
+$BEGIN
+-- Super+K in the system language. Managed by the Language plugin:
+-- ~/.config/omarchy/plugins/imnos.language/menu-keybindings unbind
+do
+  local path = os.getenv("HOME") .. "/.config/omarchy/plugins/imnos.language/menu-keybindings"
+  local file = io.open(path, "r")
+  if file then
+    file:close()
+    hl.unbind("SUPER + K")
+    o.bind("SUPER + K", "Keybindings", path)
+  end
+end
+$END
+LUA
+}
+
+without_block() {
+  awk -v b="$BEGIN" -v e="$END" '$0 == b { skip = 1 } !skip { print } $0 == e { skip = 0 }' "$BINDINGS"
+}
+
+cmd_bind() {
+  [[ -f $BINDINGS ]] || fail "$BINDINGS does not exist"
+  local body
+  body="$(without_block)"$'\n\n'"$(block)"
+  # Trailing blank lines from a previous block would pile up on every run.
+  body=$(printf '%s\n' "$body" | awk 'NF { for (; blank > 0; blank--) print ""; print; next } { blank++ }')
+  if [[ "$(cat "$BINDINGS")" == "$body" ]]; then
+    echo "menu-keybindings: Super+K already bound"
+    return 0
+  fi
+  cp -p "$BINDINGS" "$BINDINGS.bak"
+  printf '%s\n' "$body" >"$BINDINGS"
+  echo "menu-keybindings: Super+K bound in $BINDINGS"
+}
+
+cmd_unbind() {
+  [[ -f $BINDINGS ]] && grep -qxF -e "$BEGIN" "$BINDINGS" || { echo "menu-keybindings: not bound"; return 0; }
+  local body
+  body=$(without_block | awk 'NF { for (; blank > 0; blank--) print ""; print; next } { blank++ }')
+  cp -p "$BINDINGS" "$BINDINGS.bak"
+  printf '%s\n' "$body" >"$BINDINGS"
+  echo "menu-keybindings: Super+K returned to Omarchy"
+}
+
+cmd_status() {
+  local bound=no table
+  [[ -f $BINDINGS ]] && grep -qxF -e "$BEGIN" "$BINDINGS" && bound=yes
+  table=$(table_for "${LANG:-}")
+  printf 'bound=%s table=%s\n' "$bound" "$([[ -f $table ]] && basename "$table" .tsv || echo none)"
+}
+
+case "${1:-}" in
+  --select) shift; cmd_select "$@" ;;
+  bind) cmd_bind ;;
+  unbind) cmd_unbind ;;
+  status) cmd_status ;;
+  -h | --help) sed -n '2,23p' "${BASH_SOURCE[0]}" | sed 's|^# \{0,1\}||' ;;
+  *) cmd_menu "$@" ;;
+esac

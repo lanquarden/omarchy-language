@@ -157,3 +157,160 @@ Chromium Account	Račun Chromium
 Docker DB	Podatkovna baza Docker
 Language	Jezik
 Log out and back in to finish switching.	Za dokončanje se odjavite in znova prijavite.
+
+# Keybindings (Super+K). Read by menu-keybindings, which shows each binding's
+# description in this language. A description ending in a number -- "Switch to
+# workspace 3" -- is looked up without it, so one row covers every workspace.
+Omarchy menu	Meni Omarchy
+File manager	Upravitelj datotek
+File manager (cwd)	Upravitelj datotek (trenutna mapa)
+Browser (private)	Brskalnik (zasebno)
+System menu	Sistemski meni
+Theme menu	Meni tem
+Apps menu	Meni programov
+Capture menu	Meni zajema
+Hardware menu	Meni strojne opreme
+Power menu	Meni napajanja
+Toggle menu	Preklopi meni
+Full screen	Celozaslonsko
+Tiled full screen	Celozaslonsko v mreži
+Full width	Polna širina
+Close window	Zapri okno
+Close all windows	Zapri vsa okna
+Lock system	Zakleni sistem
+Toggle window floating/tiling	Preklopi plavajoče/tlakovano okno
+Toggle window split	Preklopi razdelitev okna
+Pop window out (float & pin)	Izloči okno (plavajoče in pripeto)
+Pseudo window	Psevdo okno
+Universal copy	Univerzalno kopiraj
+Universal paste	Univerzalno prilepi
+Universal cut	Univerzalno izreži
+Clipboard manager	Upravitelj odložišča
+Emojis	Emodžiji
+Color picker	Izbirnik barv
+Screenrecording	Snemanje zaslona
+Extract text (OCR) from screenshot	Izlušči besedilo (OCR) iz zaslonske slike
+Switch to workspace	Preklopi na delovno površino
+Former workspace	Nazadnje uporabljena delovna površina
+Previous workspace	Prejšnja delovna površina
+Next workspace	Naslednja delovna površina
+Move window to workspace	Premakni okno na delovno površino
+Move window silently to workspace	Tiho premakni okno na delovno površino
+Move workspace to left monitor	Premakni delovno površino na levi zaslon
+Move workspace to right monitor	Premakni delovno površino na desni zaslon
+Move workspace to up monitor	Premakni delovno površino na zgornji zaslon
+Move workspace to down monitor	Premakni delovno površino na spodnji zaslon
+Toggle workspace layout	Preklopi postavitev delovne površine
+Scroll active workspace forward	Pomakni dejavno delovno površino naprej
+Scroll active workspace backward	Pomakni dejavno delovno površino nazaj
+Swap window to the left	Zamenjaj okno z levim
+Swap window to the right	Zamenjaj okno z desnim
+Swap window up	Zamenjaj okno z zgornjim
+Swap window down	Zamenjaj okno s spodnjim
+Focus on next window	Fokus na naslednje okno
+Focus on previous window	Fokus na prejšnje okno
+Focus on next monitor	Fokus na naslednji zaslon
+Focus on previous monitor	Fokus na prejšnji zaslon
+Focus on left window	Fokus na levo okno
+Focus on right window	Fokus na desno okno
+Focus on above window	Fokus na zgornje okno
+Focus on below window	Fokus na spodnje okno
+Move window	Premakni okno
+Resize window	Spremeni velikost okna
+Expand window left	Razširi okno v levo
+Expand window left a little	Razširi okno malo v levo
+Expand window left a lot	Razširi okno močno v levo
+Expand window down	Razširi okno navzdol
+Expand window down a little	Razširi okno malo navzdol
+Expand window down a lot	Razširi okno močno navzdol
+Shrink window left	Skrči okno v levo
+Shrink window left a little	Skrči okno malo v levo
+Shrink window left a lot	Skrči okno močno v levo
+Shrink window up	Skrči okno navzgor
+Shrink window up a little	Skrči okno malo navzgor
+Shrink window up a lot	Skrči okno močno navzgor
+Save window width	Shrani širino okna
+Restore window width	Obnovi širino okna
+Move window to scratchpad	Premakni okno na skrito delovno površino
+Toggle scratchpad	Preklopi skrito delovno površino
+Toggle window transparency	Preklopi prosojnost okna
+Toggle window gaps	Preklopi razmike oken
+Toggle single-window square aspect	Preklopi kvadratno razmerje enega okna
+Reveal active window on top	Pokaži dejavno okno na vrhu
+Switch to group window	Preklopi na okno v skupini
+Next window in group	Naslednje okno v skupini
+Previous window in group	Prejšnje okno v skupini
+Move window to group on left	Premakni okno v levo skupino
+Move window to group on right	Premakni okno v desno skupino
+Move window to group on top	Premakni okno v zgornjo skupino
+Move window to group on bottom	Premakni okno v spodnjo skupino
+Move active window out of group	Premakni dejavno okno iz skupine
+Move grouped window focus left	Fokus na levo okno v skupini
+Move grouped window focus right	Fokus na desno okno v skupini
+Toggle window grouping	Preklopi združevanje oken
+Invoke last notification	Odpri zadnje obvestilo
+Dismiss last notification	Opusti zadnje obvestilo
+Dismiss all notifications	Opusti vsa obvestila
+Toggle silencing notifications	Preklopi utišanje obvestil
+Open notification history	Odpri zgodovino obvestil
+Toggle nightlight	Preklopi nočno svetlobo
+Toggle locking on idle	Preklopi zaklepanje ob nedejavnosti
+Toggle dictation	Preklopi narekovanje
+Start dictation (push-to-talk)	Začni narekovanje (pritisni in govori)
+Stop dictation (push-to-talk)	Ustavi narekovanje (pritisni in govori)
+Download Video from Web App	Prenesi video iz spletne aplikacije
+Copy URL from Web App	Kopiraj URL iz spletne aplikacije
+Make webcam overlay smaller	Pomanjšaj sliko spletne kamere
+Make webcam overlay larger	Povečaj sliko spletne kamere
+Monitor scaling up	Povečaj merilo zaslona
+Monitor scaling down	Zmanjšaj merilo zaslona
+Toggle laptop display	Preklopi zaslon prenosnika
+Toggle laptop display mirroring	Preklopi zrcaljenje zaslona prenosnika
+Bar panel	Plošča vrstice
+Toggle top bar	Preklopi zgornjo vrstico
+Show battery remaining	Pokaži preostanek baterije
+Show reminders	Pokaži opomnike
+Set reminder	Nastavi opomnik
+Clear reminders	Počisti opomnike
+Show time	Pokaži čas
+Calendar	Koledar
+Toggle weather	Preklopi vreme
+Zoom in	Povečaj
+Reset zoom	Ponastavi povečavo
+Power	Napajanje
+Calculator	Kalkulator
+Background switcher	Izbira ozadja
+Activity	Dejavnost
+Email	E-pošta
+New email	Novo e-sporočilo
+X Post	Objava na X
+Music	Glasba
+Music TUI	Glasba (TUI)
+Passwords	Gesla
+Volume up	Povečaj glasnost
+Volume down	Zmanjšaj glasnost
+Volume up precise	Povečaj glasnost (natančno)
+Volume down precise	Zmanjšaj glasnost (natančno)
+Mute	Utišaj
+Mute microphone	Utišaj mikrofon
+Play	Predvajaj
+Pause	Premor
+Next track	Naslednja skladba
+Previous track	Prejšnja skladba
+Switch audio output	Preklopi zvočni izhod
+Switch media source	Preklopi vir predvajanja
+Eject media	Izvrzi nosilec
+Brightness up	Povečaj svetlost
+Brightness down	Zmanjšaj svetlost
+Brightness up precise	Povečaj svetlost (natančno)
+Brightness down precise	Zmanjšaj svetlost (natančno)
+Brightness maximum	Največja svetlost
+Brightness minimum	Najmanjša svetlost
+Keyboard brightness up	Povečaj osvetlitev tipkovnice
+Keyboard brightness down	Zmanjšaj osvetlitev tipkovnice
+Keyboard backlight cycle	Preklopi osvetlitev tipkovnice
+Enable touchpad	Omogoči sledilno ploščico
+Disable touchpad	Onemogoči sledilno ploščico
+Toggle touchpad	Preklopi sledilno ploščico
+Tmux keybindings	Bližnjice Tmux
+Herdr keybindings	Bližnjice Herdr

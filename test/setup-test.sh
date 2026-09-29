@@ -160,7 +160,7 @@ status=$(run_setup "$tmp/rescan" sl_SI.UTF-8 --with-panels --no-menu)
 unset ENABLE_NEEDS_RESCAN
 check "exits 0" "$status" "0"
 still_disabled=$(grep -c . "$tmp/rescan/.stub-enabled" 2>/dev/null || echo 0)
-check "every panel ended up enabled" "$still_disabled" "12"
+check "every panel ended up enabled" "$still_disabled" "13"
 grep -q "asking the shell to rescan" "$tmp/rescan/out.txt" &&
   ok "says it rescanned" || bad "says it rescanned"
 [[ -f "$tmp/rescan/.config/omarchy/locales/sl.json" ]] &&

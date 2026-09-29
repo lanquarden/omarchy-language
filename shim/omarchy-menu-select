@@ -1,0 +1,4 @@
+#!/bin/bash
+# Stands in for omarchy-menu-select while menu-keybindings runs Omarchy's
+# keybindings menu; see menu-keybindings.
+exec "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../menu-keybindings" --select "$@"
