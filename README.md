@@ -39,6 +39,8 @@ the way to refresh the menu translation after an Omarchy update.
   the packaged menu, not because a bar is the right home for a settings action.
 - **Omarchy menu** — translates the menu itself, where a table exists for the
   language. Off by default. See below for what this can and cannot reach.
+- **Keybindings (Super+K)** — the list of bindings, in the same language as
+  the menu. `setup` turns it on; see below.
 - **Bar label** — the language code (`EN`, `SL`) or a globe glyph; the tooltip
   spells the locale out.
 
@@ -103,6 +105,28 @@ language`, one per line, `#` for comments. Keys are the English strings, not
 row ids, so a word translates once wherever it appears and a row Omarchy adds
 later using a word already in the table translates itself. Anything absent
 stays English, which is the right answer for Steam, Docker and Tailscale.
+
+## Translating Super+K
+
+Super+K is `omarchy-menu-keybindings`, which reads `hyprctl binds`, orders
+the rows, caches them and dispatches whatever you pick. `menu-keybindings`
+runs it unmodified, with a stand-in for `omarchy-menu-select` ahead of it on
+PATH that translates each row's description on the way into the menu and maps
+the pick back to the English row on the way out. The ordering, the cache and
+the dispatch never see a translated word, so none of them can break on one.
+
+The words come from the same `translations/<locale>.tsv` as the menu. A
+description ending in a number — *Switch to workspace 3* — is looked up
+without it, so one row covers all ten workspaces.
+
+`setup` points Super+K at it by adding a marked block to
+`~/.config/hypr/bindings.lua`, the file Omarchy leaves for your own bindings.
+The block binds only while the plugin is installed, so removing the plugin
+gives Super+K back to Omarchy rather than to nothing. To take it out yourself:
+
+```bash
+~/.config/omarchy/plugins/imnos.language/menu-keybindings unbind
+```
 
 ## Limits
 
@@ -225,10 +249,11 @@ removed. `setup --with-panels` installs all of them.
 | [indicators](https://github.com/sbelcl/omarchy-indicators-l10n) | notification, night light, recording, stay-awake, dictation, reminder tooltips |
 | [system update](https://github.com/sbelcl/omarchy-system-update-l10n) | the pending-updates tooltip |
 | [reminders](https://github.com/sbelcl/omarchy-reminders-l10n) | the reminder flow's two prompts and its invalid-input notification |
+| [network](https://github.com/sbelcl/omarchy-network-l10n) | the Wi-Fi panel: status, stats, band, DNS, network list, passphrase prompt |
 
-The **network** panel is deliberately left alone: 71 strings across nearly 2,000
-lines, in the file upstream changes most. The keyboard layout indicator has
-nothing of Omarchy's to translate — its tooltip comes from xkb.
+The network panel is the file upstream changes most, so it is the fork most
+likely to need a re-sync after an Omarchy release. The keyboard layout
+indicator has nothing of Omarchy's to translate — its tooltip comes from xkb.
 
 `tools/mkfork` builds a fork from a JSON spec: it copies upstream, applies the
 edits (refusing to write anything if one does not apply), drops in the catalog
@@ -247,8 +272,18 @@ layer upstream, delete them rather than maintain them.
 ```bash
 omarchy plugin validate .   # manifest against the schema the shell enforces
 ./test/model-test.sh        # Model.js, locales.awk, menu-translate; needs node
+./test/setup-test.sh        # setup, against a throwaway HOME and stubbed omarchy
+./test/keybindings-test.sh  # Super+K, against a stubbed menu
 ./menu-translate status     # what the panel's menu section is reading
 ```
+
+`setup` is the script a developer never runs on their own machine, because their
+machine is already the desired state — which is how it shipped able to end
+halfway through and say nothing. `test/setup-test.sh` runs it end to end with
+`omarchy` and `localectl` stubbed and `HOME` pointed at a temporary directory,
+and asserts the thing a partial run loses: `~/.config/omarchy/locales/<lang>.json`,
+which every translated panel reads and without which the desktop is silently
+English again.
 
 The menu test is the one that matters: it runs the generator against the real
 Omarchy menu, merges the result through the shell's own `MenuModel.js`, and

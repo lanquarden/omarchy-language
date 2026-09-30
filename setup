@@ -35,12 +35,22 @@ PANEL_REPOS=(
   "https://github.com/sbelcl/omarchy-indicators-l10n.git sbelcl.indicators"
   "https://github.com/sbelcl/omarchy-system-update-l10n.git sbelcl.system-update"
   "https://github.com/sbelcl/omarchy-reminders-l10n.git sbelcl.reminders"
+  "https://github.com/sbelcl/omarchy-network-l10n.git sbelcl.network"
 )
 PLUGIN_DIR="$HOME/.config/omarchy/plugins/$PLUGIN_ID"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 note() { printf '  %s\n' "$*"; }
 fail() { printf '\nsetup: %s\n' "$*" >&2; exit 1; }
+
+# Steps 3, 4 and 5 are independent of each other: setting the language does not
+# need the menu, and the catalog the panels read does not need either. An
+# unreachable repo or a cancelled password prompt used to end the run through
+# set -e, which left a desktop with panels and no catalog -- every string back
+# in English, and nothing on screen saying why. So the ones that can be carried
+# are collected here and reported together at the end instead.
+unfinished=()
+carry() { unfinished+=("$1"); note "could not: $1"; }
 
 while (( $# > 0 )); do
   case "$1" in
@@ -58,18 +68,27 @@ command -v omarchy >/dev/null || fail "this is for Omarchy; 'omarchy' is not on 
 command -v localectl >/dev/null || fail "localectl is missing"
 
 # The locale has to be one glibc knows, or systemd will refuse to generate it.
+# The list is overridable so test/setup-test.sh can run this script end to end
+# against a fixture instead of the machine it happens to be on.
 if ! awk -v want="$LOCALE" '$2 == "UTF-8" && $1 == want { found = 1 } END { exit !found }' \
-  /usr/share/i18n/SUPPORTED 2>/dev/null; then
+  "${LOCALE_SUPPORTED:-/usr/share/i18n/SUPPORTED}" 2>/dev/null; then
   fail "$LOCALE is not a UTF-8 locale in /usr/share/i18n/SUPPORTED"
 fi
 
 say "1/5  Installing the Language plugin"
+# This one is not optional: the menu table and the catalog both come out of it,
+# so there is nothing for the later steps to do without it.
 if [[ -d $PLUGIN_DIR ]]; then
   note "already installed; updating"
   omarchy plugin update "$PLUGIN_ID" --yes >/dev/null 2>&1 || note "no update available"
-else
-  omarchy plugin add "$PLUGIN_REPO" --enable --yes
+elif ! omarchy plugin add "$PLUGIN_REPO" --enable --yes; then
+  # add installs and then enables, and the enable half fails on its own when
+  # the shell has not rescanned yet. Only a missing folder is fatal here.
+  [[ -d $PLUGIN_DIR ]] ||
+    fail "could not install the plugin from $PLUGIN_REPO -- is the network up?"
+  note "installed, but not enabled yet"
 fi
+[[ -d $PLUGIN_DIR ]] || fail "expected the plugin at $PLUGIN_DIR; it is not there"
 
 if (( WITH_PANELS )); then
   say "2/5  Installing the translated panels"
@@ -80,12 +99,41 @@ if (( WITH_PANELS )); then
     if [[ -d "$HOME/.config/omarchy/plugins/$id" ]]; then
       note "$id already installed; updating"
       omarchy plugin update "$id" --yes >/dev/null 2>&1 || true
-    else
-      omarchy plugin add "$repo" --enable --yes
+    elif ! omarchy plugin add "$repo" --enable --yes; then
+      # `add` copies the plugin in and then enables it, and the enable half
+      # fails on its own when the running shell has not rescanned yet
+      # ("plugin is not known; run: omarchy-shell shell rescanPlugins"). The
+      # files being in place is the common case, so that is not a lost install.
+      [[ -d "$HOME/.config/omarchy/plugins/$id" ]] || carry "install $id from $repo"
     fi
   done
+
 else
   say "2/5  Skipping the translated panels (pass --with-panels to translate the bar)"
+fi
+
+# An installed plugin that is not enabled is the quietest way for this to go
+# wrong: the built-in keeps the slot, so the bar looks right and reads English,
+# and a second run takes the "already installed" branch and never revisits it.
+# Ask the shell to rescan -- which is exactly what a failed enable asks for --
+# and try again.
+to_enable=()
+for entry in "$PLUGIN_REPO $PLUGIN_ID" "${PANEL_REPOS[@]}"; do
+  read -r repo id <<<"$entry"
+  [[ $id == "$PLUGIN_ID" || $WITH_PANELS == 1 ]] || continue
+  [[ -d "$HOME/.config/omarchy/plugins/$id" ]] || continue
+  omarchy plugin list --json 2>/dev/null |
+    jq -e --arg id "$id" 'any(.[]; .id == $id and .enabled)' >/dev/null 2>&1 ||
+    to_enable+=("$id")
+done
+
+if (( ${#to_enable[@]} )); then
+  note "${#to_enable[@]} installed but not enabled; asking the shell to rescan"
+  omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+  for id in "${to_enable[@]}"; do
+    omarchy plugin enable "$id" >/dev/null 2>&1 ||
+      carry "enable $id (it is installed; 'omarchy-restart-shell' should pick it up)"
+  done
 fi
 
 say "3/5  Setting the system language to $LOCALE"
@@ -99,7 +147,9 @@ if [[ $current_locale == "$LOCALE" ]]; then
 else
   note "asking systemd to set it -- this may want your password, and will"
   note "generate the locale if nobody has yet"
-  localectl set-locale "LANG=$LOCALE"
+  # A cancelled prompt is a plausible answer, not a reason to abandon the menu
+  # and the catalog: both are this user's own files and neither waits on LANG.
+  localectl set-locale "LANG=$LOCALE" || carry "set the system language to $LOCALE"
 fi
 
 if (( WITH_MENU )); then
@@ -107,8 +157,21 @@ if (( WITH_MENU )); then
   table="${LOCALE%%.*}"
   table="${table%%@*}"
   if [[ -f "$PLUGIN_DIR/translations/$table.tsv" ]]; then
-    "$PLUGIN_DIR/menu-translate" apply "$table"
-    note "$("$PLUGIN_DIR/menu-translate" status)"
+    if "$PLUGIN_DIR/menu-translate" apply "$table"; then
+      note "$("$PLUGIN_DIR/menu-translate" status)"
+    else
+      carry "translate the menu into $table"
+    fi
+    # Super+K reads the same table. Rebinding it edits the user's own
+    # bindings.lua, inside a marked block that `menu-keybindings unbind` takes
+    # back out.
+    if [[ ! -x "$PLUGIN_DIR/menu-keybindings" ]]; then
+      note "this plugin version cannot translate Super+K"
+    elif [[ ! -f $HOME/.config/hypr/bindings.lua ]]; then
+      note "no ~/.config/hypr/bindings.lua; Super+K stays English"
+    elif ! "$PLUGIN_DIR/menu-keybindings" bind; then
+      carry "put Super+K on the translated keybindings menu"
+    fi
   else
     note "no menu translation for $table yet; the menu stays English"
   fi
@@ -119,10 +182,37 @@ fi
 say "5/5  Installing the string catalog"
 # Read by the translated panel plugins. Installed only when absent: once it is
 # in the user's config it is theirs to edit.
-if [[ -x "$PLUGIN_DIR/catalog" ]]; then
-  "$PLUGIN_DIR/catalog" install "$LOCALE" || note "no catalog for this language yet"
-else
+language="${LOCALE%%.*}"; language="${language%%@*}"; language="${language%%_*}"
+catalog_file="$HOME/.config/omarchy/locales/$language.json"
+if [[ ! -x "$PLUGIN_DIR/catalog" ]]; then
   note "this plugin version ships no catalog"
+elif ! "$PLUGIN_DIR/catalog" install "$LOCALE"; then
+  if [[ -f "$PLUGIN_DIR/locales/$language.json" ]]; then
+    carry "install the catalog to $catalog_file"
+  else
+    note "no catalog for $language yet; the panels stay English"
+  fi
+fi
+
+# What the panels actually read, checked rather than assumed. Every string in
+# every panel resolves through this one file, so its absence is the difference
+# between a translated desktop and an English one -- and the only visible
+# symptom is English text, which looks like nothing having run at all.
+if [[ -f "$PLUGIN_DIR/locales/$language.json" && ! -f $catalog_file ]]; then
+  carry "put the catalog at $catalog_file (the panels read it; without it they stay English)"
+fi
+
+if (( ${#unfinished[@]} )); then
+  printf '\n\033[1mDone, except for %s:\033[0m\n' \
+    "$( (( ${#unfinished[@]} == 1 )) && echo "one thing" || echo "${#unfinished[@]} things")"
+  for item in "${unfinished[@]}"; do printf '  - %s\n' "$item"; done
+  cat <<PARTIAL
+
+Everything else is in place. This is safe to run again -- it picks up where it
+left off -- and a failure here is worth reporting:
+https://github.com/sbelcl/omarchy-language/issues
+PARTIAL
+  exit 1
 fi
 
 cat <<DONE

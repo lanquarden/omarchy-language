@@ -24,11 +24,17 @@ jobs:
       - name: Unit tests
         run: test/model-test.sh
 
+      - name: Install script
+        run: test/setup-test.sh
+
+      - name: Keybindings menu
+        run: test/keybindings-test.sh
+
       - name: Translation data
         run: tools/check-translations.sh
 
       - name: Shell syntax
         run: |
-          for script in setup menu-language menu-translate tools/*.sh test/*.sh; do
+          for script in setup menu-language menu-translate menu-keybindings shim/omarchy-menu-select tools/*.sh test/*.sh; do
             bash -n "$script"
           done
